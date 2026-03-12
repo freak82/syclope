@@ -12,11 +12,9 @@ target_compile_options(flags_options
         -Wpedantic 
         -Werror
         -Winit-self
-        #        -Wuseless-cast
         -Wshadow
         -Wconversion
         -Wsign-conversion
-        #        -Warith-conversion
 )
 
 # The libbcc links to these dynamically and thus there is no point for us to
