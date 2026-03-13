@@ -17,7 +17,7 @@ include(cmake/flags.cmake)
 
 add_subdirectory(extern)
 
-add_subdirectory(src)
+add_subdirectory(app)
 
 if(SYCLOPE_BUILD_TESTS)
     include(CTest)
