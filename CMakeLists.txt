@@ -1,24 +1,26 @@
 cmake_minimum_required(VERSION 4.2)
 
 project(
-    learn-ebpf 
-    DESCRIPTION "A project to learn ebpf"
+    syclope
+    DESCRIPTION "System performance observability tool"
     LANGUAGES CXX C ASM
     VERSION 0.0.1
 )
 
+option(
+    SYCLOPE_BUILD_TESTS
+    "Enable building tests and test infrastructure. Default: ON. Values: { ON, OFF }."
+    ON
+)
+
 include(cmake/flags.cmake)
 
-add_executable(learn-ebpf
-    src/main.cpp
-)
+add_subdirectory(extern)
 
-target_precompile_headers(learn-ebpf
-    PRIVATE src/precompiled.hpp
-)
+add_subdirectory(src)
 
-target_link_libraries(learn-ebpf
-    PRIVATE 
-        bcc
-        flags_options
-)
+if(SYCLOPE_BUILD_TESTS)
+    include(CTest)
+    include(cmake/tests.cmake)
+    add_subdirectory(tests)
+endif()
