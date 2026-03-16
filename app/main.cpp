@@ -1,14 +1,12 @@
 #include "logging.hpp"
 #include "throw.hpp"
 
-const std::string BPF_PROGRAM = R"(
-int tcp_sendmsg_clone(void *ctx) {
-  bpf_trace_printk("Hello, World! Here I did a tcp_sendmsg call!\n");
-  return 0;
-}
-)";
-
-namespace stdex = std::experimental;
+// clang-format off
+static constexpr const char BPF_PROGRAM[] = {
+#embed "on_tcp_sendmsg.h"
+, '\0'
+};
+// clang-format on
 
 int main()
 {
@@ -22,6 +20,7 @@ int main()
         }
 
         // const std::string fnname = bpf.get_syscall_fnname("clone");
+        /*
         const std::string fnname = "tcp_sendmsg";
         log_info("Got syscall name: {}", fnname);
 
@@ -34,6 +33,7 @@ int main()
                 log_error("bpf.detach_kprobe failed: {}", res.msg());
             }
         });
+        */
 
         std::ifstream pipe("/sys/kernel/tracing/trace_pipe");
         for (std::string line;;) {
