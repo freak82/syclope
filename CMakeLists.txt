@@ -17,6 +17,8 @@ include(cmake/flags.cmake)
 
 add_subdirectory(extern)
 
+add_subdirectory(bpfs)
+
 add_subdirectory(app)
 
 if(SYCLOPE_BUILD_TESTS)

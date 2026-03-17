@@ -1,12 +1,7 @@
 #include "logging.hpp"
 #include "throw.hpp"
 
-// clang-format off
-static constexpr const char BPF_PROGRAM[] = {
-#embed "on_tcp_sendmsg.h"
-, '\0'
-};
-// clang-format on
+static constexpr const char* BPF_PROGRAM = "blah";
 
 int main()
 {

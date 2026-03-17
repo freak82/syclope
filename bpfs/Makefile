@@ -1,5 +1,5 @@
 CLANG   = clang
-BPFTOOL = bpftool
+BPFTOOL ?= $(shell command -v bpftool 2>/dev/null || echo /usr/sbin/bpftool)
 
 # Discover BPF programs
 BPF_SRCS := $(wildcard *.c)
@@ -19,7 +19,7 @@ all: $(BPF_OBJS) $(BPF_SKELS)
 
 # Generate libbpf skeleton
 %.skel.h: %.o
-	sudo $(BPFTOOL) gen skeleton $< > $@
+	$(BPFTOOL) gen skeleton $< > $@
 
 clean:
 	rm -f $(BPF_OBJS) $(BPF_SKELS)

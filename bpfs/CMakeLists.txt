@@ -1,0 +1,7 @@
+
+find_program(MAKE_PROGRAM make REQUIRED)
+
+add_custom_target(bpfs ALL
+    COMMAND ${MAKE_PROGRAM}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)

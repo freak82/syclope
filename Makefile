@@ -8,6 +8,12 @@ debug:
 release:
 	cmake --build ./build/ --verbose --config Release
 
+clean:
+	rm -r ./build/app
+	rm -r ./build/bpfs
+	rm -r ./build/tests
+	make clean -C ./bpfs
+
 test:
 	ctest --verbose --test-dir ./build -C RelWithDebInfo
 
@@ -26,4 +32,4 @@ report:
 		xdg-open ./build/code-check-reports/html/index.html
 
 .PHONY:
-	config debug reldeb release test check report
+	reldeb debug release clean test config config_no_test check report
