@@ -1,34 +1,17 @@
 #include "logging.hpp"
-#include "throw.hpp"
 
-static constexpr const char* BPF_PROGRAM = "blah";
+#include "put/skel.hpp"
+#include "put/throw.hpp"
+
+#include <bpfs/on_tcp_sendmsg.skel.h>
 
 int main()
 {
     try {
-        log_info("Starting with BCC {}", LIBBCC_VERSION);
+        log_info("Starting with LIBBPF {}.{}", LIBBPF_MAJOR_VERSION,
+                 LIBBPF_MINOR_VERSION);
 
-        ebpf::BPF bpf;
-
-        if (const auto res = bpf.init(BPF_PROGRAM); !res.ok()) {
-            throw_runtime_error("bpf.init failed: {}", res.msg());
-        }
-
-        // const std::string fnname = bpf.get_syscall_fnname("clone");
-        /*
-        const std::string fnname = "tcp_sendmsg";
-        log_info("Got syscall name: {}", fnname);
-
-        if (const auto res = bpf.attach_kprobe(fnname, "tcp_sendmsg_clone");
-            !res.ok()) {
-            throw_runtime_error("bpf.attach_kprobe failed: {}", res.msg());
-        }
-        stdex::scope_exit _([&] {
-            if (const auto res = bpf.detach_kprobe(fnname); !res.ok()) {
-                log_error("bpf.detach_kprobe failed: {}", res.msg());
-            }
-        });
-        */
+        put::skel<on_tcp_sendmsg> skel;
 
         std::ifstream pipe("/sys/kernel/tracing/trace_pipe");
         for (std::string line;;) {

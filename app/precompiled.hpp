@@ -11,6 +11,7 @@
 #include <exception>
 #include <experimental/scope>
 #include <fstream>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -18,8 +19,6 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 // other system headers
-#include <bcc/BPF.h>
-#include <bcc/bcc_version.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // boost headers

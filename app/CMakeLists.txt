@@ -3,9 +3,22 @@ add_executable(syclope
     main.cpp
 )
 
+add_dependencies(syclope bpfs)
+
+# The skeletons are added as a system include directory because they
+# generate some warnings otherwise.
+target_include_directories(syclope SYSTEM
+    PRIVATE
+        ${CMAKE_SOURCE_DIR}/bpfs/skels
+)
+target_include_directories(syclope
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 target_link_libraries(syclope
     PRIVATE 
-        bcc
+        bpf
         Boost::program_options
         fmt::fmt
         flags_options

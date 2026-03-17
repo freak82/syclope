@@ -1,5 +1,7 @@
 #pragma once
 
+namespace put // project utilities
+{
 // clang-format off
 
 template <typename... Args>
@@ -28,3 +30,4 @@ inline void throw_system_error(int err,
 }
 
 // clang-format on
+} // namespace put
