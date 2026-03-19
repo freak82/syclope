@@ -2,7 +2,10 @@ include(FetchContent)
 
 set(BOOST_ENABLE_CMAKE ON)
 set(BOOST_INCLUDE_LIBRARIES 
-    program_options 
+    endian
+    program_options
+    range
+    static_string
 )
 
 FetchContent_Declare(

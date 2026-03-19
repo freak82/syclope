@@ -3,15 +3,20 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 // general system headers
+#include <arpa/inet.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // c++ std headers
+#include <algorithm>
 #include <exception>
 #include <experimental/scope>
 #include <fstream>
 #include <memory>
+#include <ranges>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -22,9 +27,12 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 // boost headers
+#include <boost/endian/conversion.hpp>
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/parsers.hpp>
 #include <boost/program_options/variables_map.hpp>
+#include <boost/range/irange.hpp>
+#include <boost/static_string/static_string.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 // extern library headers

@@ -3,18 +3,20 @@ BPFTOOL ?= $(shell command -v bpftool 2>/dev/null || echo /usr/sbin/bpftool)
 
 # Discover BPF programs
 BPF_SRCS := $(wildcard *.c)
-SKELS_DIR := ./skels/bpfs
+SKELS_DIR := ./include/bpfs
 
 # Derived files
 BPF_OBJS  := $(BPF_SRCS:.c=.o)
 BPF_SKELS := $(BPF_SRCS:.c=.skel.h)
 
 # Common BPF compile flags
-BPF_CFLAGS := -target bpf -O2 -g -Wall -Wextra -Werror
+BPF_CFLAGS := -target bpf -D__TARGET_ARCH_x86 \
+			  -O2 -g -Wall -Wextra -Werror \
+			  -I./include
 
 .INTERMEDIATE: $(BPF_OBJS)
 
-all: skelsdir $(BPF_OBJS) $(BPF_SKELS)
+all: $(BPF_OBJS) $(BPF_SKELS)
 
 # Compile BPF program
 %.o: %.c
@@ -24,10 +26,7 @@ all: skelsdir $(BPF_OBJS) $(BPF_SKELS)
 %.skel.h: %.o
 	$(BPFTOOL) gen skeleton $< > $(SKELS_DIR)/$@
 
-skelsdir:
-	mkdir -p $(SKELS_DIR)
-
 clean:
-	rm -rf $(SKELS_DIR)
+	rm $(SKELS_DIR)/*.skel.h
 
-.PHONY: all clean skelsdir $(CLANG) $(BPFTOOL)
+.PHONY: all clean $(CLANG) $(BPFTOOL)

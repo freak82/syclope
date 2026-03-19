@@ -9,7 +9,7 @@ add_dependencies(syclope bpfs)
 # generate some warnings otherwise.
 target_include_directories(syclope SYSTEM
     PRIVATE
-        ${CMAKE_SOURCE_DIR}/bpfs/skels
+        ${CMAKE_SOURCE_DIR}/bpfs/include
 )
 target_include_directories(syclope
     PRIVATE
@@ -19,7 +19,10 @@ target_include_directories(syclope
 target_link_libraries(syclope
     PRIVATE 
         bpf
+        Boost::endian
         Boost::program_options
+        Boost::range
+        Boost::static_string
         fmt::fmt
         flags_options
 )
