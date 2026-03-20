@@ -19,7 +19,8 @@ struct ip4_addr
 {
     using integer_type = uint32_t;
 
-    static constexpr uint8_t cnt_bits = 32;
+    static constexpr uint8_t cnt_bits  = 32;
+    static constexpr uint8_t cnt_bytes = 4;
 
     unsigned char bytes_[4];
 
@@ -96,7 +97,8 @@ struct ip6_addr
     // Silence pedantic warning for ISO C++ not supporting __int128
     __extension__ using integer_type = unsigned __int128;
 
-    static constexpr uint8_t cnt_bits = 128;
+    static constexpr uint8_t cnt_bits  = 128;
+    static constexpr uint8_t cnt_bytes = 16;
 
     unsigned char bytes_[16];
 

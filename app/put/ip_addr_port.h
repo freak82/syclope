@@ -7,6 +7,8 @@ namespace put
 
 struct ip4_addr_port
 {
+    static constexpr auto cnt_addr_bytes = ip4_addr::cnt_bytes;
+
     ip4_addr addr_;
     __be16 port_;
 
@@ -68,6 +70,8 @@ struct ip4_addr_port
 
 struct ip6_addr_port
 {
+    static constexpr auto cnt_addr_bytes = ip6_addr::cnt_bytes;
+
     ip6_addr addr_;
     __be16 port_;
 

@@ -16,9 +16,12 @@ static void signal_handler(int)
 template <typename AddrPort>
 void print_info(const auto& key, const auto& val)
 {
-    using ap_type  = AddrPort;
-    const auto src = ap_type::from_network_order(key.saddr, key.sport);
-    const auto dst = ap_type::from_network_order(key.saddr, key.sport);
+    using ap_type = AddrPort;
+    auto addr     = [](std::span<const unsigned char> bytes) {
+        return bytes.first<ap_type::cnt_addr_bytes>();
+    };
+    const auto src = ap_type::from_network_order(addr(key.saddr), key.sport);
+    const auto dst = ap_type::from_network_order(addr(key.saddr), key.sport);
     fmt::println("src:{} dst:{} sent:{} recv:{}", src, dst, val.sent, val.recv);
 }
 
@@ -43,7 +46,7 @@ static void print_stats(put::skel<tcp_top>& skel)
         in = out;
         // Print'em all
         for (auto idx : boost::irange(count)) {
-            if (key.is_v4) {
+            if (keys[idx].is_v4) {
                 print_info<put::ip4_addr_port>(keys[idx], vals[idx]);
             } else {
                 print_info<put::ip6_addr_port>(keys[idx], vals[idx]);

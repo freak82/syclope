@@ -4,6 +4,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // general system headers
 #include <arpa/inet.h>
+#include <bpf/bpf.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
