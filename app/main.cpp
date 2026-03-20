@@ -21,8 +21,8 @@ void print_info(const auto& key, const auto& val)
         return bytes.first<ap_type::cnt_addr_bytes>();
     };
     const auto src = ap_type::from_network_order(addr(key.saddr), key.sport);
-    const auto dst = ap_type::from_network_order(addr(key.saddr), key.sport);
-    fmt::println("src:{} dst:{} sent:{} recv:{}", src, dst, val.sent, val.recv);
+    const auto dst = ap_type::from_network_order(addr(key.daddr), key.dport);
+    log_info("src:{} dst:{} sent:{} recv:{}", src, dst, val.sent, val.recv);
 }
 
 static void print_stats(put::skel<tcp_top>& skel)
@@ -40,10 +40,6 @@ static void print_stats(put::skel<tcp_top>& skel)
         uint32_t count = batch_size;
         const int res =
             ::bpf_map_lookup_batch(fd, &in, &out, keys, vals, &count, nullptr);
-        if (res < 0) {
-            put::throw_system_error(errno, "Failed to do bpf_map_lookup_batch");
-        }
-        in = out;
         // Print'em all
         for (auto idx : boost::irange(count)) {
             if (keys[idx].is_v4) {
@@ -52,15 +48,22 @@ static void print_stats(put::skel<tcp_top>& skel)
                 print_info<put::ip6_addr_port>(keys[idx], vals[idx]);
             }
         }
+        if (res < 0) {
+            if (errno == ENOENT) break;
+            put::throw_system_error(errno, "Failed to do bpf_map_lookup_batch");
+        }
+        in = out;
     }
 }
 
 int main()
 {
+    /*
     libbpf_set_print(
         [](enum libbpf_print_level, const char* format, va_list args) {
             return vfprintf(stderr, format, args);
         });
+    */
 
     try {
         log_info("Starting with LIBBPF {}.{}", LIBBPF_MAJOR_VERSION,
@@ -76,8 +79,16 @@ int main()
         // 3. Loaded and attached
         put::skel<tcp_top> skel;
 
-        while (running) { print_stats(skel); }
+        while (running) {
+            // \033 [ - ESC [ - ANSI escape sequence
+            // \033[2J - clear whole screen
+            // \033[1;1H - sets the cursor to position 1;1 - top left corner
+            log_info("\033[1J\033[1;1H");
+            print_stats(skel);
+            ::sleep(1);
+        }
 
+        log_info("Done");
     } catch (const std::exception& ex) {
         log_error(ex.what());
         return EXIT_FAILURE;

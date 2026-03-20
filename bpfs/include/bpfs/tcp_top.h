@@ -1,6 +1,7 @@
 #ifndef SYCLOPE_TCP_TOP_H
 #define SYCLOPE_TCP_TOP_H
 
+// The information here is in network byte order
 struct syclope_conn_key
 {
     unsigned short sport;

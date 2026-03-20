@@ -17,21 +17,17 @@ struct {
     __type(value, struct syclope_traffic);
 } syclope_conn_map SEC(".maps");
 
-SEC("kprobe/tcp_recvmsg")
-int BPF_PROG(syclope_tcp_recvmsg,
-             struct sock* sk,
-             struct msghdr* msg,
-             size_t len) {
-    (void)ctx;
-    (void)msg;
-
+static void fill_stats(struct sock* sk, size_t rbytes, size_t sbytes) {
     const u16 family = BPF_CORE_READ(sk, __sk_common.skc_family);
-    if (family != AF_INET && family != AF_INET6) return 0;
-
+    if (family != AF_INET && family != AF_INET6) return;
     // The local port (skc_num) is in host byte order
+    // It's converted because to be consistent with the rest of the information:
+    // everything reported is in network byte order.
     struct syclope_conn_key key = {
-        .sport = bpf_ntohs(BPF_CORE_READ(sk, __sk_common.skc_dport)),
-        .dport = BPF_CORE_READ(sk, __sk_common.skc_num),
+        .sport = BPF_CORE_READ(sk, __sk_common.skc_dport),
+        .dport = bpf_htons(BPF_CORE_READ(sk, __sk_common.skc_num)),
+        .saddr = {},
+        .daddr = {},
         .is_v4 = (family == AF_INET),
     };
     if (family == AF_INET) {
@@ -49,15 +45,36 @@ int BPF_PROG(syclope_tcp_recvmsg,
 
     struct syclope_traffic* traf = bpf_map_lookup_elem(&syclope_conn_map, &key);
     if (traf) {
-        traf->recv += len;
+        traf->sent += sbytes;
+        traf->recv += rbytes;
         bpf_map_update_elem(&syclope_conn_map, &key, traf, BPF_EXIST);
     } else {
         const struct syclope_traffic tmp = {
-            .sent = 0,
-            .recv = len,
+            .sent = sbytes,
+            .recv = rbytes,
         };
         bpf_map_update_elem(&syclope_conn_map, &key, &tmp, BPF_NOEXIST);
     }
+}
 
+SEC("fentry/tcp_recvmsg")
+int BPF_PROG(syclope_tcp_recvmsg,
+             struct sock* sk,
+             struct msghdr* msg,
+             size_t len) {
+    (void)ctx;
+    (void)msg;
+    fill_stats(sk, len, 0);
+    return 0;
+}
+
+SEC("fentry/tcp_sendmsg")
+int BPF_PROG(syclope_tcp_sendmsg,
+             struct sock* sk,
+             struct msghdr* msg,
+             size_t len) {
+    (void)ctx;
+    (void)msg;
+    fill_stats(sk, 0, len);
     return 0;
 }
