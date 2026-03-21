@@ -36,3 +36,10 @@ FetchContent_Declare(
     OVERRIDE_FIND_PACKAGE
 )
 FetchContent_MakeAvailable(doctest)
+
+################################################################################
+
+find_package(Curses REQUIRED)
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LIBBPF REQUIRED libbpf)
