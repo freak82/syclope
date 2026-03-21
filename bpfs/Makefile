@@ -7,14 +7,14 @@ SKELS_DIR := ./include/bpfs
 
 # Derived files
 BPF_OBJS  := $(BPF_SRCS:.c=.o)
-BPF_SKELS := $(BPF_SRCS:.c=.skel.h)
+BPF_SKELS := $(addprefix $(SKELS_DIR)/,$(BPF_SRCS:.c=.skel.h))
 
 # Common BPF compile flags
 BPF_CFLAGS := -target bpf -D__TARGET_ARCH_x86 \
 			  -O2 -g -Wall -Wextra -Werror \
 			  -I./include
 
-.INTERMEDIATE: $(BPF_OBJS)
+#.INTERMEDIATE: $(BPF_OBJS)
 
 all: $(BPF_OBJS) $(BPF_SKELS)
 
@@ -23,10 +23,10 @@ all: $(BPF_OBJS) $(BPF_SKELS)
 	$(CLANG) $(BPF_CFLAGS) -c $< -o $@
 
 # Generate libbpf skeleton
-%.skel.h: %.o
-	$(BPFTOOL) gen skeleton $< > $(SKELS_DIR)/$@
+$(SKELS_DIR)/%.skel.h: %.o
+	$(BPFTOOL) gen skeleton $< > $@
 
 clean:
-	rm $(SKELS_DIR)/*.skel.h
+	rm $(BPF_OBJS) $(BPF_SKELS)
 
 .PHONY: all clean $(CLANG) $(BPFTOOL)
