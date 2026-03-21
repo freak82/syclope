@@ -19,6 +19,7 @@ target_include_directories(syclope
 target_link_libraries(syclope
     PRIVATE 
         bpf
+        curses
         Boost::endian
         Boost::program_options
         Boost::range

@@ -1,5 +1,8 @@
 #include "logging.hpp"
 
+#include "curs/curses.hpp"
+#include "curs/helpers.hpp"
+
 #include "put/ip_addr_port.h"
 #include "put/skel.hpp"
 #include "put/throw.hpp"
@@ -14,7 +17,7 @@ static void signal_handler(int)
 }
 
 template <typename AddrPort>
-void print_info(const auto& key, const auto& val)
+void print_info(int y, int x, const auto& key, const auto& val)
 {
     using ap_type = AddrPort;
     auto addr     = [](std::span<const unsigned char> bytes) {
@@ -22,7 +25,8 @@ void print_info(const auto& key, const auto& val)
     };
     const auto src = ap_type::from_network_order(addr(key.saddr), key.sport);
     const auto dst = ap_type::from_network_order(addr(key.daddr), key.dport);
-    log_info("src:{} dst:{} sent:{} recv:{}", src, dst, val.sent, val.recv);
+    curs::print(y, x, "src:{} dst:{} sent:{} recv:{}", src, dst, val.sent,
+                val.recv);
 }
 
 static void print_stats(put::skel<tcp_top>& skel)
@@ -36,6 +40,8 @@ static void print_stats(put::skel<tcp_top>& skel)
 
     void* in  = nullptr;
     void* out = nullptr;
+    int y     = 0;
+    int x     = 0;
     for (const int fd = ::bpf_map__fd(skel->maps.syclope_conn_map);;) {
         uint32_t count = batch_size;
         const int res =
@@ -43,9 +49,9 @@ static void print_stats(put::skel<tcp_top>& skel)
         // Print'em all
         for (auto idx : boost::irange(count)) {
             if (keys[idx].is_v4) {
-                print_info<put::ip4_addr_port>(keys[idx], vals[idx]);
+                print_info<put::ip4_addr_port>(y++, x, keys[idx], vals[idx]);
             } else {
-                print_info<put::ip6_addr_port>(keys[idx], vals[idx]);
+                print_info<put::ip6_addr_port>(y++, x, keys[idx], vals[idx]);
             }
         }
         if (res < 0) {
@@ -54,6 +60,7 @@ static void print_stats(put::skel<tcp_top>& skel)
         }
         in = out;
     }
+    curs::refresh();
 }
 
 int main()
@@ -64,6 +71,12 @@ int main()
             return vfprintf(stderr, format, args);
         });
     */
+    curs::initscr();
+    stdex::scope_exit _(curs::endwin);
+
+    curs::noecho();
+    curs::cbreak();
+    curs::curs_set(0);
 
     try {
         log_info("Starting with LIBBPF {}.{}", LIBBPF_MAJOR_VERSION,
@@ -80,10 +93,6 @@ int main()
         put::skel<tcp_top> skel;
 
         while (running) {
-            // \033 [ - ESC [ - ANSI escape sequence
-            // \033[2J - clear whole screen
-            // \033[1;1H - sets the cursor to position 1;1 - top left corner
-            log_info("\033[1J\033[1;1H");
             print_stats(skel);
             ::sleep(1);
         }
