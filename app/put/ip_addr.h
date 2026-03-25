@@ -193,28 +193,32 @@ struct ip6_addr
 
 } // namespace put
 ////////////////////////////////////////////////////////////////////////////////
+// The formatters are done in this way so that the parsing functionality of the
+// base formatter can be reused and the output to be able to be aligned, etc.
 template <>
-struct fmt::formatter<put::ip4_addr>
+struct fmt::formatter<put::ip4_addr> : fmt::formatter<std::string_view>
 {
-    constexpr auto parse(auto& ctx) const noexcept { return ctx.begin(); }
     auto format(const auto& arg, auto& ctx) const noexcept
     {
-        return fmt::format_to(ctx.out(), "{}.{}.{}.{}", arg.bytes_[0],
-                              arg.bytes_[1], arg.bytes_[2], arg.bytes_[3]);
+        using base_type = fmt::formatter<std::string_view>;
+        char buf[INET_ADDRSTRLEN];
+        auto [out, _] =
+            fmt::format_to_n(buf, sizeof(buf), "{}.{}.{}.{}", arg.bytes_[0],
+                             arg.bytes_[1], arg.bytes_[2], arg.bytes_[3]);
+        return base_type::format(
+            std::string_view(buf, static_cast<size_t>(out - buf)), ctx);
     }
 };
 
 template <>
-struct fmt::formatter<put::ip6_addr>
+struct fmt::formatter<put::ip6_addr> : fmt::formatter<std::string_view>
 {
-    constexpr auto parse(auto& ctx) const noexcept { return ctx.begin(); }
     auto format(const auto& arg, auto& ctx) const noexcept
     {
-        // Just to be sure about the null termination because the man pages
-        // don't tell explicitly if the returned string is NULL terminated.
-        char buff[INET6_ADDRSTRLEN + 1] = {};
-        const auto addr                 = arg.to_in_addr();
+        using base_type = fmt::formatter<std::string_view>;
+        char buff[INET6_ADDRSTRLEN];
+        const auto addr = arg.to_in_addr();
         const char* str = ::inet_ntop(AF_INET6, &addr, buff, sizeof(buff));
-        return str ? std::copy(str, str + strlen(str), ctx.out()) : ctx.out();
+        return str ? base_type::format(std::string_view(str), ctx) : ctx.out();
     }
 };

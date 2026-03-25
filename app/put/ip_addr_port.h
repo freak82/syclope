@@ -117,10 +117,6 @@ struct ip6_addr_port
             .sin6_scope_id = {},
         };
     }
-    [[nodiscard]] static constexpr size_t size_sockaddr_in() noexcept
-    {
-        return sizeof(sockaddr_in6);
-    }
 
     constexpr auto operator<=>(const ip6_addr_port&) const noexcept = default;
     constexpr bool operator==(const ip6_addr_port& rhs) const noexcept
@@ -131,24 +127,32 @@ struct ip6_addr_port
 
 } // namespace put
 ////////////////////////////////////////////////////////////////////////////////
+// The formatters are done in this way so that the parsing functionality of the
+// base formatter can be reused and the output to be able to be aligned, etc.
 template <>
-struct fmt::formatter<put::ip4_addr_port>
+struct fmt::formatter<put::ip4_addr_port> : fmt::formatter<std::string_view>
 {
-    constexpr auto parse(auto& ctx) const noexcept { return ctx.begin(); }
     auto format(const auto& arg, auto& ctx) const noexcept
     {
-        return fmt::format_to(ctx.out(), "{}:{}", arg.addr_,
-                              ben::big_to_native(arg.port_));
+        using base_type = fmt::formatter<std::string_view>;
+        char buf[INET_ADDRSTRLEN + 8];
+        auto [out, _] = fmt::format_to_n(buf, sizeof(buf), "{}:{}", arg.addr_,
+                                         ben::big_to_native(arg.port_));
+        return base_type::format(
+            std::string_view(buf, static_cast<size_t>(out - buf)), ctx);
     }
 };
 
 template <>
-struct fmt::formatter<put::ip6_addr_port>
+struct fmt::formatter<put::ip6_addr_port> : fmt::formatter<std::string_view>
 {
-    constexpr auto parse(auto& ctx) const noexcept { return ctx.begin(); }
     auto format(const auto& arg, auto& ctx) const noexcept
     {
-        return fmt::format_to(ctx.out(), "{}:{}", arg.addr_,
-                              ben::big_to_native(arg.port_));
+        using base_type = fmt::formatter<std::string_view>;
+        char buf[INET6_ADDRSTRLEN + 8];
+        auto [out, _] = fmt::format_to_n(buf, sizeof(buf), "{}:{}", arg.addr_,
+                                         ben::big_to_native(arg.port_));
+        return base_type::format(
+            std::string_view(buf, static_cast<size_t>(out - buf)), ctx);
     }
 };
