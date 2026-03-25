@@ -6,48 +6,39 @@
 namespace put
 {
 
+template <typename AddrRepr, typename Addr>
+concept ReprFromNetworkOrder = requires(AddrRepr repr) {
+    { Addr::from_network_order(repr) } -> std::same_as<Addr>;
+};
+
+template <typename AddrRepr, typename Addr>
+concept ReprFromNativeOrder = requires(AddrRepr repr) {
+    { Addr::from_native_order(repr) } -> std::same_as<Addr>;
+};
+
 struct ip4_addr_port
 {
-    static constexpr auto cnt_addr_bytes = ip4_addr::cnt_bytes;
+    using addr_type = ip4_addr;
 
-    ip4_addr addr_;
+    addr_type addr_;
     __be16 port_;
 
+    template <ReprFromNetworkOrder<addr_type> AddrRepr>
     [[nodiscard]] static constexpr ip4_addr_port
-    from_network_order(__be32 addr, __be16 port) noexcept
+    from_network_order(AddrRepr addr, __be16 port) noexcept
     {
         return {
-            .addr_ = ip4_addr::from_network_order(addr),
+            .addr_ = addr_type::from_network_order(addr),
             .port_ = port,
         };
     }
+
+    template <ReprFromNativeOrder<addr_type> AddrRepr>
     [[nodiscard]] static constexpr ip4_addr_port
-    from_network_order(std::span<const unsigned char, 4> addr,
-                       __be16 port) noexcept
+    from_native_order(AddrRepr addr, uint16_t port) noexcept
     {
         return {
-            .addr_ = ip4_addr::from_network_order(addr),
-            .port_ = port,
-        };
-    }
-    [[nodiscard]] static constexpr ip4_addr_port
-    from_network_order(in_addr addr, __be16 port) noexcept
-    {
-        return {
-            .addr_ = ip4_addr::from_network_order(addr),
-            .port_ = port,
-        };
-    }
-    [[nodiscard]] static constexpr ip4_addr_port
-    from_network_order(const sockaddr_in& rhs) noexcept
-    {
-        return from_network_order(rhs.sin_addr, rhs.sin_port);
-    }
-    [[nodiscard]] static constexpr ip4_addr_port
-    from_native_order(uint32_t addr, uint16_t port) noexcept
-    {
-        return {
-            .addr_ = ip4_addr::from_native_order(addr),
+            .addr_ = addr_type::from_native_order(addr),
             .port_ = ben::native_to_big(port),
         };
     }
@@ -71,40 +62,29 @@ struct ip4_addr_port
 
 struct ip6_addr_port
 {
-    static constexpr auto cnt_addr_bytes = ip6_addr::cnt_bytes;
+    using addr_type = ip6_addr;
 
     ip6_addr addr_;
     __be16 port_;
 
+    template <ReprFromNetworkOrder<addr_type> AddrRepr>
     [[nodiscard]] static constexpr ip6_addr_port
-    from_network_order(ip6_addr::integer_type addr, __be16 port) noexcept
+    from_network_order(AddrRepr addr, __be16 port) noexcept
     {
         return {
-            .addr_ = ip6_addr::from_network_order(addr),
+            .addr_ = addr_type::from_network_order(addr),
             .port_ = port,
         };
     }
+
+    template <ReprFromNativeOrder<addr_type> AddrRepr>
     [[nodiscard]] static constexpr ip6_addr_port
-    from_network_order(std::span<const unsigned char, 16> addr,
-                       __be16 port) noexcept
+    from_native_order(AddrRepr addr, uint16_t port) noexcept
     {
         return {
-            .addr_ = ip6_addr::from_network_order(addr),
-            .port_ = port,
+            .addr_ = addr_type::from_native_order(addr),
+            .port_ = ben::native_to_big(port),
         };
-    }
-    [[nodiscard]] static constexpr ip6_addr_port
-    from_network_order(in6_addr addr, __be16 port) noexcept
-    {
-        return {
-            .addr_ = ip6_addr::from_network_order(addr),
-            .port_ = port,
-        };
-    }
-    [[nodiscard]] static constexpr ip6_addr_port
-    from_network_order(const sockaddr_in6& rhs) noexcept
-    {
-        return from_network_order(rhs.sin6_addr, rhs.sin6_port);
     }
 
     [[nodiscard]] constexpr sockaddr_in6 to_sockaddr_in() const noexcept
