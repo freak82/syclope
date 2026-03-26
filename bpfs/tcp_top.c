@@ -14,18 +14,17 @@ struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, 128);
     __type(key, struct syclope_conn_key);
-    __type(value, struct syclope_traffic);
+    __type(value, struct syclope_conn_state);
 } syclope_conn_map SEC(".maps");
 
-static bool fill_key(struct sock* sk, struct syclope_conn_key* out) {
+static u16 fill_key(struct sock* sk, struct syclope_conn_key* out) {
     const u16 family = BPF_CORE_READ(sk, __sk_common.skc_family);
-    if (family != AF_INET && family != AF_INET6) return false;
+    if (family != AF_INET && family != AF_INET6) return 0;
     // The local port (skc_num) is in host byte order
     // It's converted because to be consistent with the rest of the information:
     // everything reported is in network byte order.
     out->sport = BPF_CORE_READ(sk, __sk_common.skc_dport),
-    out->dport = bpf_htons(BPF_CORE_READ(sk, __sk_common.skc_num)),
-    out->is_v4 = (family == AF_INET);
+    out->dport = bpf_htons(BPF_CORE_READ(sk, __sk_common.skc_num));
     if (family == AF_INET) {
         // The (s/d)addr field is bigger than the IPv4 address size and thus
         // we need to zero out the remaining bytes.
@@ -42,42 +41,51 @@ static bool fill_key(struct sock* sk, struct syclope_conn_key* out) {
         bpf_probe_read_kernel(out->saddr, sizeof(sk->__sk_common.skc_v6_daddr),
                               &sk->__sk_common.skc_v6_daddr);
     }
-    return true;
+    return family;
 }
 
 static void fill_stats(struct sock* sk, size_t rbytes, size_t sbytes) {
     struct syclope_conn_key key;
-    if (!fill_key(sk, &key)) return;
+    const u16 family = fill_key(sk, &key);
+    if (family == 0) return;
 
-    struct syclope_traffic* traf = bpf_map_lookup_elem(&syclope_conn_map, &key);
-    if (traf) {
-        traf->sent += sbytes;
-        traf->recv += rbytes;
-        bpf_map_update_elem(&syclope_conn_map, &key, traf, BPF_EXIST);
+    struct syclope_conn_state* s = bpf_map_lookup_elem(&syclope_conn_map, &key);
+    if (s) {
+        s->recv += rbytes;
+        s->sent += sbytes;
+        bpf_map_update_elem(&syclope_conn_map, &key, s, BPF_EXIST);
     } else {
-        const struct syclope_traffic tmp = {
-            .sent = sbytes,
-            .recv = rbytes,
+        const struct syclope_conn_state tmp = {
+            .recv  = rbytes,
+            .sent  = sbytes,
+            .state = TCP_ESTABLISHED,
+            .is_v4 = (family == AF_INET),
         };
         bpf_map_update_elem(&syclope_conn_map, &key, &tmp, BPF_NOEXIST);
     }
 }
 
 SEC("fentry/tcp_set_state")
-void BPF_PROG(tcp_set_state, struct sock* sk, int state) {
+int BPF_PROG(tcp_set_state, struct sock* sk, int state) {
     (void)ctx;
     if (state == TCP_ESTABLISHED) {
         struct syclope_conn_key key;
-        if (!fill_key(sk, &key)) return;
+        const u16 family = fill_key(sk, &key);
+        if (family == 0) return 0;
         // Create/Update existing entry
-        const struct syclope_traffic zero = {};
+        const struct syclope_conn_state zero = {
+            .recv  = 0,
+            .sent  = 0,
+            .is_v4 = (family == AF_INET),
+        };
         bpf_map_update_elem(&syclope_conn_map, &key, &zero, BPF_ANY);
     } else if (state == TCP_CLOSE) {
         struct syclope_conn_key key;
-        if (!fill_key(sk, &key)) return;
+        const u16 family = fill_key(sk, &key);
+        if (family == 0) return 0;
         bpf_map_delete_elem(&syclope_conn_map, &key);
     }
-    return;
+    return 0;
 }
 
 SEC("fentry/tcp_recvmsg")

@@ -16,43 +16,47 @@ static void signal_handler(int)
     running = false;
 }
 
-template <typename AddrPort>
+template <typename Addr>
 void print_info(int y, int x, const auto& key, const auto& val)
 {
-    using ap_type = AddrPort;
-    auto addr     = [](std::span<const unsigned char> bytes) {
-        return bytes.first<ap_type::cnt_addr_bytes>();
+    [[maybe_unused]] auto addr = [](std::span<const unsigned char> bytes) {
+        return Addr::from_network_order(bytes.first<Addr::cnt_bytes>());
     };
-    const auto src = ap_type::from_network_order(addr(key.saddr), key.sport);
-    const auto dst = ap_type::from_network_order(addr(key.daddr), key.dport);
-    curs::print(y, x, "src:{} dst:{} sent:{} recv:{}", src, dst, val.sent,
-                val.recv);
+    // clang-format off
+    curs::print(y, x, 
+                 "{:>16}{:>6}{:>16}{:>6}{:>13}{:>13}{:>13}", 
+                 addr(key.saddr), ben::big_to_native(key.sport),
+                 addr(key.daddr), ben::big_to_native(key.dport),
+                 val.sent, val.recv, val.state);
+    // clang-format on
 }
 
-static void print_stats(put::skel<tcp_top>& skel)
+static uint32_t print_stats(put::skel<tcp_top>& skel)
 {
     // The batch size needs to be at least of the size of the biggest bucket
     // in the hash-table or the function returns ENOSPC.
     // https://elixir.bootlin.com/linux/v6.19.6/source/kernel/bpf/hashtab.c#L1764
     static constexpr size_t batch_size = 5;
     syclope_conn_key keys[batch_size];
-    syclope_traffic vals[batch_size];
+    syclope_conn_state vals[batch_size];
+
+    struct entry
+    {
+        syclope_conn_key key;
+        syclope_conn_state val;
+    };
+    std::vector<entry> data;
 
     void* in  = nullptr;
     void* out = nullptr;
-    int y     = 0;
-    int x     = 0;
+    curs::print(0, 0, "{:>16}{:>6}{:>16}{:>6}{:>13}{:>13}{:>13}", "raddr",
+                "rport", "laddr", "lport", "sent bytes", "recv bytes", "state");
     for (const int fd = ::bpf_map__fd(skel->maps.syclope_conn_map);;) {
         uint32_t count = batch_size;
         const int res =
             ::bpf_map_lookup_batch(fd, &in, &out, keys, vals, &count, nullptr);
-        // Print'em all
         for (auto idx : boost::irange(count)) {
-            if (keys[idx].is_v4) {
-                print_info<put::ip4_addr_port>(y++, x, keys[idx], vals[idx]);
-            } else {
-                print_info<put::ip6_addr_port>(y++, x, keys[idx], vals[idx]);
-            }
+            data.push_back({.key = keys[idx], .val = vals[idx]});
         }
         if (res < 0) {
             if (errno == ENOENT) break;
@@ -60,17 +64,35 @@ static void print_stats(put::skel<tcp_top>& skel)
         }
         in = out;
     }
-    curs::refresh();
+
+    // Print'em all
+    stdrg::sort(data, [](const auto& lhs, const auto& rhs) {
+        return ben::big_to_native(lhs.key.dport) <
+               ben::big_to_native(rhs.key.dport);
+    });
+    for (int y = 1; const auto& ent : data) {
+        if (ent.val.is_v4) {
+            print_info<put::ip4_addr>(y++, 0, ent.key, ent.val);
+        } else {
+            print_info<put::ip6_addr>(y++, 0, ent.key, ent.val);
+        }
+    }
+
+    return static_cast<uint32_t>(data.size());
 }
 
 int main()
 {
-    /*
     libbpf_set_print(
-        [](enum libbpf_print_level, const char* format, va_list args) {
-            return vfprintf(stderr, format, args);
+        [](enum libbpf_print_level lvl, const char* format, va_list args) {
+            if (lvl == LIBBPF_WARN) {
+                curs::vw_printw(stdscr, format, args);
+                curs::wrefresh(stdscr);
+            }
+            return 0;
+            // return vfprintf(stderr, format, args);
         });
-    */
+
     curs::initscr();
     stdex::scope_exit _(curs::endwin);
 
@@ -93,13 +115,18 @@ int main()
         put::skel<tcp_top> skel;
 
         while (running) {
-            print_stats(skel);
+            curs::wclear(stdscr);
+            [[maybe_unused]] const auto cnt = print_stats(skel);
+            curs::wrefresh(stdscr);
+            // wnoutrefresh(stdscr);
+            // doupdate();
             ::sleep(1);
         }
 
         log_info("Done");
     } catch (const std::exception& ex) {
         log_error(ex.what());
+        ::wgetch(stdscr);
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
