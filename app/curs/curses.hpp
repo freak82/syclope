@@ -6,9 +6,11 @@ namespace curs
 using ::cbreak;
 using ::curs_set;
 using ::endwin;
-using ::getch;
 using ::initscr;
 using ::noecho;
-using ::refresh;
+using ::vw_printw;
+using ::wclear;
+using ::wgetch;
+using ::wrefresh;
 
 } // namespace curs
