@@ -15,10 +15,12 @@ namespace bss   = boost::static_strings;
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Generic functionality
-#define SYCLOPE_MAX_BITFIELD_VALUE(type, field) \
-    [] {                                        \
-        type t{};                               \
-        return --t.field;                       \
+
+// The max value of given field of given type/struct. Works for bitfields too.
+#define SYCLOPE_MAX_FIELD_VALUE(type, field) \
+    [] {                                     \
+        type t{};                            \
+        return --t.field;                    \
     }()
 
 ////////////////////////////////////////////////////////////////////////////////

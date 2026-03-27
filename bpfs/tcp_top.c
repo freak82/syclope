@@ -44,24 +44,30 @@ static u16 fill_key(struct sock* sk, struct syclope_conn_key* out) {
     return family;
 }
 
-static void fill_stats(struct sock* sk, size_t rbytes, size_t sbytes) {
+static void fill_stats(struct sock* sk, size_t nbytes, bool is_recv) {
     struct syclope_conn_key key;
     const u16 family = fill_key(sk, &key);
     if (family == 0) return;
 
     struct syclope_conn_state* s = bpf_map_lookup_elem(&syclope_conn_map, &key);
-    if (s) {
-        s->recv += rbytes;
-        s->sent += sbytes;
-        bpf_map_update_elem(&syclope_conn_map, &key, s, BPF_EXIST);
-    } else {
-        const struct syclope_conn_state tmp = {
-            .recv  = rbytes,
-            .sent  = sbytes,
+    if (!s) {
+        const struct syclope_conn_state zero = {
+            .recv  = 0,
+            .sent  = 0,
             .state = TCP_ESTABLISHED,
             .is_v4 = (family == AF_INET),
         };
-        bpf_map_update_elem(&syclope_conn_map, &key, &tmp, BPF_NOEXIST);
+        bpf_map_update_elem(&syclope_conn_map, &key, &zero, BPF_NOEXIST);
+        s = bpf_map_lookup_elem(&syclope_conn_map, &key);
+        if (!s) return; // Is this really needed (possible to happen)?
+    }
+    // The assumption is that recvmsg/sendmsg will never be called concurrently
+    // for the same operation/direction and the same socket.
+    // Thus we modify the sent/recv bytes without atomic operations.
+    if (is_recv) {
+        s->recv += nbytes;
+    } else {
+        s->sent += nbytes;
     }
 }
 
@@ -72,7 +78,7 @@ int BPF_PROG(syclope_tcp_recvmsg,
              size_t len) {
     (void)ctx;
     (void)msg;
-    fill_stats(sk, len, 0);
+    fill_stats(sk, len, true);
     return 0;
 }
 
@@ -83,30 +89,22 @@ int BPF_PROG(syclope_tcp_sendmsg,
              size_t len) {
     (void)ctx;
     (void)msg;
-    fill_stats(sk, 0, len);
+    fill_stats(sk, len, false);
     return 0;
 }
 
 SEC("fentry/tcp_set_state")
 int BPF_PROG(tcp_set_state, struct sock* sk, int state) {
     (void)ctx;
+    if (state == TCP_SYN_SENT || state == TCP_SYN_RECV) return 0;
+    // The connection entry is created by the sendmsg/recvmsg hooks because
+    // some connections may have been already established when the hooks
+    // are loaded and we're going to miss them if we add entries here.
     struct syclope_conn_key key;
     const u16 family = fill_key(sk, &key);
     if (family == 0) return 0;
-
     struct syclope_conn_state* s = bpf_map_lookup_elem(&syclope_conn_map, &key);
-    if (s) {
-        s->state = state;
-        bpf_map_update_elem(&syclope_conn_map, &key, s, BPF_EXIST);
-    } else {
-        const struct syclope_conn_state tmp = {
-            .recv  = 0,
-            .sent  = 0,
-            .state = state,
-            .is_v4 = (family == AF_INET),
-        };
-        bpf_map_update_elem(&syclope_conn_map, &key, &tmp, BPF_NOEXIST);
-    }
+    if (s) s->state = state;
     return 0;
 }
 

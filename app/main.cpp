@@ -13,7 +13,7 @@
 #include <bpfs/tcp_top.skel.h>
 
 // We need to be sure that we can represent all needed states
-static_assert(SYCLOPE_MAX_BITFIELD_VALUE(syclope_conn_state, state) >=
+static_assert(SYCLOPE_MAX_FIELD_VALUE(syclope_conn_state, state) >=
               BPF_TCP_MAX_STATES);
 
 static volatile sig_atomic_t running = true;
@@ -30,7 +30,7 @@ static void print_info(int y, int x, const auto& key, const auto& val)
     };
     // clang-format off
     curs::print(y, x, 
-                 "{:>16}{:>6}{:>16}{:>6}{:>13}{:>13}{:>13}", 
+                 "{:>16}{:>6}{:>16}{:>6}{:>13}{:>13}{:>14}", 
                  addr(key.saddr), ben::big_to_native(key.sport),
                  addr(key.daddr), ben::big_to_native(key.dport),
                  val.sent, val.recv, tcp::state(val.state));
@@ -55,7 +55,7 @@ static uint32_t print_stats(put::skel<tcp_top>& skel)
 
     void* in  = nullptr;
     void* out = nullptr;
-    curs::print(0, 0, "{:>16}{:>6}{:>16}{:>6}{:>13}{:>13}{:>13}", "raddr",
+    curs::print(0, 0, "{:>16}{:>6}{:>16}{:>6}{:>13}{:>13}{:>14}", "raddr",
                 "rport", "laddr", "lport", "sent bytes", "recv bytes", "state");
     for (const int fd = ::bpf_map__fd(skel->maps.syclope_conn_map);;) {
         uint32_t count = batch_size;

@@ -15,13 +15,18 @@ struct syclope_conn_key
     unsigned char saddr[16];
     unsigned char daddr[16];
 };
-
-struct syclope_conn_state
+// The `conn_key` and `conn_state` are allocated together by the
+// BPF_MAP_TYPE_HASH functionality. The `conn_key` already have an alignment of
+// 2 and thus there is no point to pack the `conn_state` more.
+// Bitfields can't be used because the different fields of single entry can
+// potentially be modified concurrently from different functions and using
+// bitfields would require locking in that case.
+struct __attribute__((packed, aligned(2))) syclope_conn_state
 {
     unsigned long long recv; // bytes received from the remote point
-    unsigned long long sent  : 56; // bytes sent to the remote point
-    unsigned long long state : 7; // The state of the TCP connection
-    unsigned long long is_v4 : 1;
+    unsigned long long sent; // bytes sent to the remote point
+    unsigned char state; // The state of the TCP connection
+    bool is_v4;
 };
 
 #endif // SYCLOPE_TCP_TOP_H
