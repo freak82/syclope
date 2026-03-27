@@ -65,29 +65,6 @@ static void fill_stats(struct sock* sk, size_t rbytes, size_t sbytes) {
     }
 }
 
-SEC("fentry/tcp_set_state")
-int BPF_PROG(tcp_set_state, struct sock* sk, int state) {
-    (void)ctx;
-    if (state == TCP_ESTABLISHED) {
-        struct syclope_conn_key key;
-        const u16 family = fill_key(sk, &key);
-        if (family == 0) return 0;
-        // Create/Update existing entry
-        const struct syclope_conn_state zero = {
-            .recv  = 0,
-            .sent  = 0,
-            .is_v4 = (family == AF_INET),
-        };
-        bpf_map_update_elem(&syclope_conn_map, &key, &zero, BPF_ANY);
-    } else if (state == TCP_CLOSE) {
-        struct syclope_conn_key key;
-        const u16 family = fill_key(sk, &key);
-        if (family == 0) return 0;
-        bpf_map_delete_elem(&syclope_conn_map, &key);
-    }
-    return 0;
-}
-
 SEC("fentry/tcp_recvmsg")
 int BPF_PROG(syclope_tcp_recvmsg,
              struct sock* sk,
@@ -109,3 +86,27 @@ int BPF_PROG(syclope_tcp_sendmsg,
     fill_stats(sk, 0, len);
     return 0;
 }
+
+SEC("fentry/tcp_set_state")
+int BPF_PROG(tcp_set_state, struct sock* sk, int state) {
+    (void)ctx;
+    struct syclope_conn_key key;
+    const u16 family = fill_key(sk, &key);
+    if (family == 0) return 0;
+
+    struct syclope_conn_state* s = bpf_map_lookup_elem(&syclope_conn_map, &key);
+    if (s) {
+        s->state = state;
+        bpf_map_update_elem(&syclope_conn_map, &key, s, BPF_EXIST);
+    } else {
+        const struct syclope_conn_state tmp = {
+            .recv  = 0,
+            .sent  = 0,
+            .state = state,
+            .is_v4 = (family == AF_INET),
+        };
+        bpf_map_update_elem(&syclope_conn_map, &key, &tmp, BPF_NOEXIST);
+    }
+    return 0;
+}
+
