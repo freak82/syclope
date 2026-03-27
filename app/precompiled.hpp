@@ -31,6 +31,9 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 // boost headers
+#include <boost/describe/enum.hpp>
+#include <boost/describe/enumerators.hpp>
+#include <boost/describe/enum_to_string.hpp>
 #include <boost/endian/conversion.hpp>
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/parsers.hpp>

@@ -24,17 +24,4 @@ struct syclope_conn_state
     unsigned long long is_v4 : 1;
 };
 
-#ifdef __cplusplus
-// Some things can be checked at compile time much more easily from the C++
-// This expects that the <linux/bpf.h> is included before this file.
-#define MAX_BITFIELD(type, field) \
-    [] {                          \
-        type t{};                 \
-        return --t.field;         \
-    }()
-// We need to be sure that we can represent all needed states
-static_assert(MAX_BITFIELD(syclope_conn_state, state) >= BPF_TCP_MAX_STATES);
-#undef MAX_BIT_FIELD_VALUE
-#endif
-
 #endif // SYCLOPE_TCP_TOP_H

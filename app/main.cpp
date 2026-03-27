@@ -7,41 +7,19 @@
 #include "put/skel.hpp"
 #include "put/throw.hpp"
 
+#include "tcp/state.hpp"
+
 #include <bpfs/tcp_top.h>
 #include <bpfs/tcp_top.skel.h>
+
+// We need to be sure that we can represent all needed states
+static_assert(SYCLOPE_MAX_BITFIELD_VALUE(syclope_conn_state, state) >=
+              BPF_TCP_MAX_STATES);
 
 static volatile sig_atomic_t running = true;
 static void signal_handler(int)
 {
     running = false;
-}
-
-static constexpr std::string_view tcp_state_str(auto st)
-{
-#define TCP_STATES(MACRO)                     \
-    MACRO(BPF_TCP_ESTABLISHED, established)   \
-    MACRO(BPF_TCP_SYN_SENT, syn_sent)         \
-    MACRO(BPF_TCP_SYN_RECV, syn_recv)         \
-    MACRO(BPF_TCP_FIN_WAIT1, fin_wait1)       \
-    MACRO(BPF_TCP_FIN_WAIT2, fin_wait2)       \
-    MACRO(BPF_TCP_TIME_WAIT, time_wait)       \
-    MACRO(BPF_TCP_CLOSE, close)               \
-    MACRO(BPF_TCP_CLOSE_WAIT, close_wait)     \
-    MACRO(BPF_TCP_LAST_ACK, last_ack)         \
-    MACRO(BPF_TCP_LISTEN, listen)             \
-    MACRO(BPF_TCP_CLOSING, closing)           \
-    MACRO(BPF_TCP_NEW_SYN_RECV, new_syn_recv) \
-    MACRO(BPF_TCP_BOUND_INACTIVE, bound_inactive)
-
-    switch (st) {
-#define XXX(state, name) \
-    case state: return #name;
-        TCP_STATES(XXX)
-#undef XXX
-    }
-    return "unknown";
-
-#undef TCP_STATES
 }
 
 template <typename Addr>
@@ -55,7 +33,7 @@ static void print_info(int y, int x, const auto& key, const auto& val)
                  "{:>16}{:>6}{:>16}{:>6}{:>13}{:>13}{:>13}", 
                  addr(key.saddr), ben::big_to_native(key.sport),
                  addr(key.daddr), ben::big_to_native(key.dport),
-                 val.sent, val.recv, tcp_state_str(val.state));
+                 val.sent, val.recv, tcp::state(val.state));
     // clang-format on
 }
 
