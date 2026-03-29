@@ -39,7 +39,6 @@
 #include <boost/program_options/parsers.hpp>
 #include <boost/program_options/variables_map.hpp>
 #include <boost/range/irange.hpp>
-#include <boost/static_string/static_string.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 // extern library headers

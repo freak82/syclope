@@ -15,7 +15,6 @@ target_include_directories(tests
 target_link_libraries(tests
     PRIVATE
         Boost::endian
-        Boost::static_string
         doctest::doctest
         fmt::fmt
         flags_options

@@ -52,13 +52,14 @@ struct ip4_addr
     from_string(std::string_view str) noexcept
     {
         // The C API expects NULL terminated string and thus we need the copy.
-        bss::static_string<INET_ADDRSTRLEN> tmp;
-        if (str.size() > tmp.capacity()) return std::nullopt;
-        tmp.assign(str);
+        char tmp[INET_ADDRSTRLEN];
+        if (str.size() >= sizeof(tmp)) return std::nullopt;
+        ::memcpy(tmp, str.data(), str.size());
+        tmp[str.size()] = '\0';
 
         ip4_addr ret;
         static_assert(sizeof(ret.bytes_) == sizeof(in_addr));
-        if (!::inet_pton(AF_INET, tmp.c_str(), ret.bytes_)) return std::nullopt;
+        if (!::inet_pton(AF_INET, tmp, ret.bytes_)) return std::nullopt;
         return ret;
     }
 
@@ -130,13 +131,14 @@ struct ip6_addr
     from_string(std::string_view str) noexcept
     {
         // The C API expects NULL terminated string and thus we need the copy.
-        bss::static_string<INET6_ADDRSTRLEN> tmp;
-        if (str.size() > tmp.capacity()) return std::nullopt;
-        tmp.assign(str);
+        char tmp[INET6_ADDRSTRLEN];
+        if (str.size() >= sizeof(tmp)) return std::nullopt;
+        ::memcpy(tmp, str.data(), str.size());
+        tmp[str.size()] = '\0';
 
         ip6_addr ret;
         static_assert(sizeof(ret.bytes_) == sizeof(in6_addr));
-        if (!::inet_pton(AF_INET6, tmp.c_str(), ret.bytes_))
+        if (!::inet_pton(AF_INET6, tmp, ret.bytes_))
             return std::nullopt;
         return ret;
     }

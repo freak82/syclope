@@ -23,7 +23,6 @@ target_link_libraries(syclope
         Boost::endian
         Boost::program_options
         Boost::range
-        Boost::static_string
         fmt::fmt
         flags_options
 )
@@ -31,4 +30,3 @@ target_link_libraries(syclope
 target_precompile_headers(syclope
     PRIVATE precompiled.hpp
 )
-

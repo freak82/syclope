@@ -11,7 +11,6 @@ namespace stdvw = std::views;
 namespace ben   = boost::endian;
 namespace bdesc = boost::describe;
 namespace bpo   = boost::program_options;
-namespace bss   = boost::static_strings;
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Generic functionality

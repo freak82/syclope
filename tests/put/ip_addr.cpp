@@ -86,6 +86,18 @@ DOCTEST_TEST_CASE("put::ip4_addr::from_string(invalid)")
     DOCTEST_CHECK(!addr.has_value());
 }
 
+DOCTEST_TEST_CASE("put::ip4_addr::from_string(too_long)")
+{
+    // GIVEN
+    constexpr std::string_view repr = "255.255.255.2550";
+
+    // WHEN
+    const auto addr = put::ip4_addr::from_string(repr);
+
+    // THEN
+    DOCTEST_CHECK(!addr.has_value());
+}
+
 DOCTEST_TEST_CASE("put::ip4_addr::to_network_integer")
 {
     // GIVEN
@@ -302,6 +314,19 @@ DOCTEST_TEST_CASE("put::ip6_addr::from_string(invalid)")
 {
     // GIVEN
     constexpr std::string_view repr = "2001:db8::zz";
+
+    // WHEN
+    const auto addr = put::ip6_addr::from_string(repr);
+
+    // THEN
+    DOCTEST_CHECK(!addr.has_value());
+}
+
+DOCTEST_TEST_CASE("put::ip6_addr::from_string(too_long)")
+{
+    // GIVEN
+    constexpr std::string_view repr =
+        "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.2550";
 
     // WHEN
     const auto addr = put::ip6_addr::from_string(repr);
