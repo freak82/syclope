@@ -1,0 +1,6 @@
+#pragma once
+
+////////////////////////////////////////////////////////////////////////////////
+/// boost libraries aliases
+namespace ben = boost::endian;
+namespace bss = boost::static_strings;
