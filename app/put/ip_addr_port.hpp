@@ -1,6 +1,6 @@
 #pragma once
 
-#include "put/ip_addr.h"
+#include "put/ip_addr.hpp"
 
 // TODO: Unit tests
 namespace put

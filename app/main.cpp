@@ -3,7 +3,7 @@
 #include "curs/curses.hpp"
 #include "curs/helpers.hpp"
 
-#include "put/ip_addr_port.h"
+#include "put/ip_addr.hpp"
 #include "put/skel.hpp"
 #include "put/throw.hpp"
 

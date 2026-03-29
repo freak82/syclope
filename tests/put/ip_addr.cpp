@@ -1,4 +1,4 @@
-#include "app/put/ip_addr.h"
+#include "app/put/ip_addr.hpp"
 
 DOCTEST_TEST_SUITE_BEGIN("put/ip_addr");
 
@@ -49,7 +49,8 @@ DOCTEST_TEST_CASE("put::ip4_addr::from_network_order(in_addr)")
 DOCTEST_TEST_CASE("put::ip4_addr::from_native_order")
 {
     // GIVEN
-    constexpr put::ip4_addr::integer_type repr = ben::big_to_native(0x01020304u);
+    constexpr put::ip4_addr::integer_type repr =
+        ben::big_to_native(0x01020304u);
 
     // WHEN
     const auto addr = put::ip4_addr::from_native_order(repr);
@@ -101,7 +102,8 @@ DOCTEST_TEST_CASE("put::ip4_addr::to_network_integer")
 DOCTEST_TEST_CASE("put::ip4_addr::to_native_integer")
 {
     // GIVEN
-    constexpr put::ip4_addr::integer_type repr = ben::big_to_native(0x0A000001u);
+    constexpr put::ip4_addr::integer_type repr =
+        ben::big_to_native(0x0A000001u);
     const auto addr = put::ip4_addr::from_native_order(repr);
 
     // WHEN
@@ -115,7 +117,7 @@ DOCTEST_TEST_CASE("put::ip4_addr::to_in_addr")
 {
     // GIVEN
     constexpr unsigned char repr[] = {0x7F, 0x00, 0x00, 0x01};
-    const auto addr = put::ip4_addr::from_network_order(repr);
+    const auto addr                = put::ip4_addr::from_network_order(repr);
 
     // WHEN
     const auto in_addr = addr.to_in_addr();
@@ -169,7 +171,7 @@ DOCTEST_TEST_CASE("fmt::formatter<put::ip4_addr>")
 {
     // GIVEN
     constexpr std::string_view repr = "192.168.10.42";
-    const auto addr = put::ip4_addr::from_string(repr);
+    const auto addr                 = put::ip4_addr::from_string(repr);
 
     // WHEN
     const auto str = fmt::format("{}", addr.value());
@@ -181,9 +183,9 @@ DOCTEST_TEST_CASE("fmt::formatter<put::ip4_addr>")
 DOCTEST_TEST_CASE("put::ip6_addr::from_network_order(integer)")
 {
     // GIVEN
-    using int_type = put::ip6_addr::integer_type;
-    const auto repr =
-        (int_type(0x20010DB800000000ull) << 64) | int_type(0x0000000000000001ull);
+    using int_type  = put::ip6_addr::integer_type;
+    const auto repr = (int_type(0x20010DB800000000ull) << 64) |
+                      int_type(0x0000000000000001ull);
 
     // WHEN
     const auto addr = put::ip6_addr::from_network_order(repr);
@@ -258,8 +260,9 @@ DOCTEST_TEST_CASE("put::ip6_addr::from_native_order")
 {
     // GIVEN
     using int_type = put::ip6_addr::integer_type;
-    const auto repr = ben::big_to_native(
-        (int_type(0x20010DB800000000ull) << 64) | int_type(0x0000000000000001ull));
+    const auto repr =
+        ben::big_to_native((int_type(0x20010DB800000000ull) << 64) |
+                           int_type(0x0000000000000001ull));
 
     // WHEN
     const auto addr = put::ip6_addr::from_native_order(repr);
@@ -310,9 +313,9 @@ DOCTEST_TEST_CASE("put::ip6_addr::from_string(invalid)")
 DOCTEST_TEST_CASE("put::ip6_addr::to_network_integer")
 {
     // GIVEN
-    using int_type = put::ip6_addr::integer_type;
-    const auto repr =
-        (int_type(0x20010DB800000000ull) << 64) | int_type(0x0000000000000001ull);
+    using int_type  = put::ip6_addr::integer_type;
+    const auto repr = (int_type(0x20010DB800000000ull) << 64) |
+                      int_type(0x0000000000000001ull);
     const auto addr = put::ip6_addr::from_network_order(repr);
 
     // WHEN
@@ -326,8 +329,9 @@ DOCTEST_TEST_CASE("put::ip6_addr::to_native_integer")
 {
     // GIVEN
     using int_type = put::ip6_addr::integer_type;
-    const auto repr = ben::big_to_native(
-        (int_type(0x20010DB800000000ull) << 64) | int_type(0x0000000000000001ull));
+    const auto repr =
+        ben::big_to_native((int_type(0x20010DB800000000ull) << 64) |
+                           int_type(0x0000000000000001ull));
     const auto addr = put::ip6_addr::from_native_order(repr);
 
     // WHEN
@@ -410,7 +414,7 @@ DOCTEST_TEST_CASE("fmt::formatter<put::ip6_addr>")
 {
     // GIVEN
     constexpr std::string_view repr = "2001:db8::1";
-    const auto addr = put::ip6_addr::from_string(repr);
+    const auto addr                 = put::ip6_addr::from_string(repr);
 
     // WHEN
     const auto str = fmt::format("{}", addr.value());
