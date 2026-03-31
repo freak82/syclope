@@ -1,3 +1,4 @@
+#include "app/put/compare.hpp"
 #include "app/put/ip_addr.hpp"
 
 DOCTEST_TEST_SUITE_BEGIN("put/ip_addr");
@@ -33,11 +34,10 @@ DOCTEST_TEST_CASE("put::ip4_addr::from_network_order(in_addr)")
 {
     // GIVEN
     constexpr unsigned char repr[] = {0x01, 0x02, 0x03, 0x04};
-    in_addr in_addr{};
-    ::memcpy(&in_addr, repr, sizeof(in_addr));
+    constexpr auto tmp_addr        = std::bit_cast<in_addr>(repr);
 
     // WHEN
-    const auto addr = put::ip4_addr::from_network_order(in_addr);
+    const auto addr = put::ip4_addr::from_network_order(tmp_addr);
 
     // THEN
     DOCTEST_CHECK_EQ(addr.bytes_[0], 0x01);
@@ -135,7 +135,7 @@ DOCTEST_TEST_CASE("put::ip4_addr::to_in_addr")
     const auto in_addr = addr.to_in_addr();
 
     // THEN
-    DOCTEST_CHECK_EQ(::memcmp(&in_addr, repr, sizeof(in_addr)), 0);
+    DOCTEST_CHECK_EQ(put::mem_compare(in_addr, repr), 0);
 }
 
 DOCTEST_TEST_CASE("put::ip4_addr::mask")
@@ -243,11 +243,10 @@ DOCTEST_TEST_CASE("put::ip6_addr::from_network_order(in6_addr)")
         0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
     };
-    in6_addr in_addr{};
-    ::memcpy(&in_addr, repr, sizeof(in_addr));
+    const auto tmp_addr = std::bit_cast<in6_addr>(repr);
 
     // WHEN
-    const auto addr = put::ip6_addr::from_network_order(in_addr);
+    const auto addr = put::ip6_addr::from_network_order(tmp_addr);
 
     // THEN
     DOCTEST_CHECK_EQ(addr.bytes_[0], 0x20);
@@ -379,7 +378,7 @@ DOCTEST_TEST_CASE("put::ip6_addr::to_in_addr")
     const auto in_addr = addr.to_in_addr();
 
     // THEN
-    DOCTEST_CHECK_EQ(::memcmp(&in_addr, repr, sizeof(in_addr)), 0);
+    DOCTEST_CHECK_EQ(put::mem_compare(in_addr, repr), 0);
 }
 
 DOCTEST_TEST_CASE("put::ip6_addr::mask")

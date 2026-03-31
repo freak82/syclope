@@ -2,7 +2,6 @@
 add_subdirectory(main)
 
 add_executable(tests
-    example.cpp
     put/ip_addr.cpp
     put/ip_addr_port.cpp
     $<TARGET_OBJECTS:tests_main>
