@@ -13,7 +13,7 @@
 #include <bpfs/tcp_top.skel.h>
 
 // We need to be sure that we can represent all needed states
-static_assert(SYCLOPE_MAX_FIELD_VALUE(syclope_conn_state, state) >=
+static_assert(std::numeric_limits<decltype(syclope_conn_state::state)>::max() >=
               BPF_TCP_MAX_STATES);
 
 static volatile sig_atomic_t running = true;
@@ -89,6 +89,13 @@ static uint32_t print_stats(put::skel<tcp_top>& skel)
 
 int main()
 {
+    curs::initscr();
+    stdex::scope_exit _(curs::endwin);
+
+    curs::noecho();
+    curs::cbreak();
+    curs::curs_set(0);
+
     libbpf_set_print(
         [](enum libbpf_print_level lvl, const char* format, va_list args) {
             if (lvl == LIBBPF_WARN) {
@@ -98,13 +105,6 @@ int main()
             return 0;
             // return vfprintf(stderr, format, args);
         });
-
-    curs::initscr();
-    stdex::scope_exit _(curs::endwin);
-
-    curs::noecho();
-    curs::cbreak();
-    curs::curs_set(0);
 
     try {
         log_info("Starting with LIBBPF {}.{}", LIBBPF_MAJOR_VERSION,

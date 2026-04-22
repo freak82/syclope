@@ -1,5 +1,7 @@
 #pragma once
 
+#include "put/formatters.hpp"
+
 namespace curs
 {
 
