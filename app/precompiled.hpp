@@ -12,16 +12,19 @@
 ////////////////////////////////////////////////////////////////////////////////
 // c++ std headers
 #include <algorithm>
+#include <chrono>
 #include <exception>
 #include <experimental/scope>
 #include <fstream>
 #include <memory>
+#include <optional>
 #include <ranges>
 #include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <thread>
 #include <type_traits>
 #include <vector>
 
@@ -52,7 +55,15 @@
 #include <fmt/std.h>
 
 ////////////////////////////////////////////////////////////////////////////////
-// this project headers
-#include "aliases.hpp"
+/// std aliases
+namespace stdex = std::experimental;
+namespace stdrg = std::ranges;
+namespace stdvw = std::views;
+
+////////////////////////////////////////////////////////////////////////////////
+/// boost libraries aliases
+namespace ben   = boost::endian;
+namespace bdesc = boost::describe;
+namespace bpo   = boost::program_options;
 
 #endif // SYCLOPE_PRECOMPILED_HPP
